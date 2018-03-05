@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <script>
+         /**
+         * @param {Object} imgMessage 参数：src 视频地址(必填)，
+         *                                 step 每隔多少帧截取图片 (必填)， 
+         *                                 width：video宽度
+         *                                 Height：video高度                            
+         */
+        //video相应头中要有Accept-Ranges:bytes
+        let imgMessage = {
+            width:400,
+            height:400,
+            src:'http://localhost:3000/4.mp4',
+            step:5
+        }
+        function screenshot(imgMessage) {
+            let video, canvas, cas, promise, backingStoreRatio, devicePixelRatio, ratio, time, dataTotal;
+            video = document.createElement('video');
+            video.width = imgMessage.width;
+            video.height = imgMessage.height
+            video.src = imgMessage.src;
+            video.crossOrigin = 'Anonymous';
+            promise = new Promise((res, rej) => {
+                document.body.appendChild(video);
+                video.style.opacity = 0;
+                video.style.position='fixed';
+                video.style.zIndex='-1'
+                function durationchange() {
+                    video.removeEventListener('durationchange', durationchange);
+                    time = parseInt(video.duration / imgMessage.step);
+                    canvas = document.createElement('canvas');
+                    cas = canvas.getContext('2d');
+                    devicePixelRatio = window.devicePixelRatio || 1;
+                    backingStoreRatio = cas.webkitBackingStorePixelRatio ||
+                        cas.mozBackingStorePixelRatio ||
+                        cas.msBackingStorePixelRatio ||
+                        cas.oBackingStorePixelRatio ||
+                        cas.backingStorePixelRatio || 1;
+                    ratio = devicePixelRatio / backingStoreRatio;
+                    canvas.width = video.clientWidth * ratio;
+                    canvas.height = video.clientHeight * ratio;
+                    video.currentTime = 0;
+                    dataTotal = [];
+                    function canplay() {
+                        cas.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        dataTotal.push(canvas.toDataURL("image/png"));
+                        if (video.currentTime == time *  imgMessage.step) {
+                            document.body.removeChild(video);
+                            res(dataTotal);
+                            return;
+                        }
+                        video.currentTime += imgMessage.step;
+                    }
+                    video.addEventListener('canplay', canplay, false);
+                }
+                video.addEventListener('durationchange', durationchange, false);
+            })
+            return promise;
+        }
+        screenshot( imgMessage).then((res) => {
+            res.forEach(v => {
+                let img = document.createElement('img');
+                img.src = v;
+                document.body.appendChild(img)
+            })
+
+        })
+    </script>
+</body>
+
+</html>
