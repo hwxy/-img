@@ -31,7 +31,7 @@
             step:5
         }
         function screenshot(imgMessage) {
-            let video, canvas, cas, promise, backingStoreRatio, devicePixelRatio, ratio, time, dataTotal;
+            let video, canvas, cas, promise, backingStoreRatio, devicePixelRatio, ratio, time, dataTotal,count;
             video = document.createElement('video');
             video.width = imgMessage.width;
             video.height = imgMessage.height
@@ -41,7 +41,8 @@
                 document.body.appendChild(video);
                 video.style.opacity = 0;
                 video.style.position='fixed';
-                video.style.zIndex='-1'
+                video.style.zIndex='-1';
+                video.style.pointerEvents='none'
                 function durationchange() {
                     video.removeEventListener('durationchange', durationchange);
                     time = parseInt(video.duration / imgMessage.step);
@@ -56,17 +57,19 @@
                     ratio = devicePixelRatio / backingStoreRatio;
                     canvas.width = video.clientWidth * ratio;
                     canvas.height = video.clientHeight * ratio;
-                    video.currentTime = 0;
                     dataTotal = [];
+                    count=0;
                     function canplay() {
                         cas.drawImage(video, 0, 0, canvas.width, canvas.height);
                         dataTotal.push(canvas.toDataURL("image/png"));
-                        if (video.currentTime == time *  imgMessage.step) {
+                        if (count >=time * imgMessage.step) {
                             document.body.removeChild(video);
                             res(dataTotal);
                             return;
                         }
-                        video.currentTime += imgMessage.step;
+                        count+=imgMessage.step;
+                        video.currentTime = count;   
+                        console.log(video.duration)
                     }
                     video.addEventListener('canplay', canplay, false);
                 }
